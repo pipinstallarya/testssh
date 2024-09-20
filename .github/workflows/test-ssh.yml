@@ -1,0 +1,38 @@
+name: Deploy to Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH
+      id: setup_ssh
+      run: |
+        # Create SSH directory
+        mkdir -p ~/.ssh
+        
+        # Add the SSH private key from the GitHub Secrets
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Add the SSH config file from GitHub Secrets
+        echo "${{ secrets.SSH_CONFIG }}" > ~/.ssh/config
+        chmod 600 ~/.ssh/config
+        
+        # Start SSH agent and add the passphrase-protected key
+        eval "$(ssh-agent -s)"
+        echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
+        
+        # Add server to known hosts to prevent prompt issues
+        ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
+        ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
+
+    - name: Test SSH Connection
+      run: |
+        ssh ml-brain "echo 'Connected Successfully via Proxy Jump'"
