@@ -1,53 +1,41 @@
-name: Deploy to Server
+name: SSH to Remote Server
 
-on:
-  push:
-    branches:
-      - main  # Adjust this to your deployment branch
+on: [push]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up SSH with Debug Output
-      id: setup_ssh
-      run: |
-        set -x  # Enable debugging output to trace commands
-        
-        # Create SSH directory
-        mkdir -p ~/.ssh
-        
-        # Add the SSH private key from GitHub Secrets
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        # Add the SSH config file from GitHub Secrets
-        echo "${{ secrets.SSH_CONFIG }}" > ~/.ssh/config
-        chmod 600 ~/.ssh/config
-        
-        # Install sshpass to handle password and passphrase prompts
-        sudo apt-get update && sudo apt-get install -y sshpass
-        
-        # Add server host keys to known hosts to avoid manual prompts
-        ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
-        
-        # Start SSH agent
-        eval "$(ssh-agent -s)"
-        
-        # Use sshpass to handle the passphrase prompt while adding the key
-        echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
-        
-    - name: Test SSH Connection with Debug
-      run: |
-        set -x  # Enable debugging output
-        
-        # Use sshpass to supply the proxy jump password and handle SSH key passphrase
-        export SSHPASS="${{ secrets.BAZOOKA_PASSWORD }}"
-        
-        # Run SSH command with debug output to see detailed errors
-        sshpass -e ssh -vvv -o "IdentitiesOnly=yes" -o "IdentityFile=~/.ssh/id_rsa" -o "StrictHostKeyChecking=no" -J bazooka \
-          ml-brain "echo 'Connected Successfully via Proxy Jump'" || echo 'SSH Connection Failed'
+      - name: Install sshpass
+        run: sudo apt-get install sshpass
+
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
+          ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
+
+      - name: Connect to remote server
+        env:
+          JUMP_PASSWORD: ${{ secrets.BAZOOKA_PASSWORD }}
+          KEY_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
+        run: |
+          sshpass -p "$JUMP_PASSWORD" ssh -o ProxyCommand="sshpass -p $JUMP_PASSWORD ssh -W %h:%p st125462@bazooka.cs.ait.ac.th" st125462@ml.brain.cs.ait.ac.th << EOF
+            echo "Connected Successfully via Proxy Jump"
+            # Add your commands here
+          EOF
+
+      - name: Debug SSH connection
+        if: failure()
+        env:
+          JUMP_PASSWORD: ${{ secrets.JUMP_PASSWORD }}
+          KEY_PASSPHRASE: ${{ secrets.KEY_PASSPHRASE }}
+        run: |
+          sshpass -p "$JUMP_PASSWORD" ssh -vvv -o ProxyCommand="sshpass -p $JUMP_PASSWORD ssh -W %h:%p st125462@bazooka.cs.ait.ac.th" st125462@ml.brain.cs.ait.ac.th
