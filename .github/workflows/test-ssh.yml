@@ -27,19 +27,19 @@ jobs:
         echo "${{ secrets.SSH_CONFIG }}" > ~/.ssh/config
         chmod 600 ~/.ssh/config
         
-        # Install sshpass to handle passphrase and password prompts
+        # Install sshpass to handle password and passphrase prompts
         sudo apt-get update && sudo apt-get install -y sshpass
         
-        # Start SSH agent
+        # Start SSH agent and add the passphrase-protected key
         eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/id_rsa <<< "${{ secrets.SSH_PASSPHRASE }}"
         
         # Add servers to known hosts to prevent prompt issues
         ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
         ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
 
-    - name: Connect via Proxy Jump Using sshpass
+    - name: Test SSH Connection
       run: |
-        # Use sshpass for the initial password prompt to the proxy jump
-        # Then use another sshpass instance for the passphrase prompt
+        # Use sshpass to supply the bazooka password and connect to ml-brain via proxy jump
         SSHPASS="${{ secrets.BAZOOKA_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no -J bazooka \
           -o "IdentitiesOnly=yes" -o "IdentityFile=~/.ssh/id_rsa" ml-brain "echo 'Connected Successfully via Proxy Jump'"
