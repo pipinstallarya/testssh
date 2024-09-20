@@ -34,7 +34,6 @@ jobs:
         
         # Add server host keys to known hosts to avoid manual prompts
         ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
-        ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
         
         # Start SSH agent
         eval "$(ssh-agent -s)"
