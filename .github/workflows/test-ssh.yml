@@ -9,28 +9,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install sshpass
-      run: sudo apt-get install sshpass
-
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
-        ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
-
-    - name: Deploy to server
-      env:
-        JUMP_PASSWORD: ${{ secrets.BAZOOKA_PASSWORD }}
-        KEY_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
-      run: |
-        eval $(ssh-agent -s)
-        echo "$KEY_PASSPHRASE" | ssh-add ~/.ssh/id_rsa
-        sshpass -p "$JUMP_PASSWORD" ssh -o ProxyCommand="ssh -W %h:%p st125462@bazooka.cs.ait.ac.th" st125462@ml.brain.cs.ait.ac.th << EOF
-          echo "Connected Successfully via Proxy Jump"
-          # Add your deployment commands here
-        EOF
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ml.brain.cs.ait.ac.th
+          username: st125462
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          proxy_host: bazooka.cs.ait.ac.th
+          proxy_username: st125462
+          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          proxy_passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          password: ${{ secrets.SSH_PASSPHRASE }}
+          proxy_password: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            ls -la
