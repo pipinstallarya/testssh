@@ -12,15 +12,10 @@ jobs:
       - name: SSH Remote Commands
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ml.brain.cs.ait.ac.th
+          host: bazooka.cs.ait.ac.th
           username: st125462
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          proxy_host: bazooka.cs.ait.ac.th
-          proxy_username: st125462
-          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          proxy_passphrase: ${{ secrets.SSH_PASSPHRASE }}
           password: ${{ secrets.SSH_PASSPHRASE }}
-          proxy_password: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             ls -la
