@@ -19,3 +19,4 @@ jobs:
           password: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             ls -la
+            whoami
