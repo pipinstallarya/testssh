@@ -9,13 +9,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH Remote Commands
-        uses: appleboy/ssh-action@v1.0.2
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: bazooka.cs.ait.ac.th
           username: st125462
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          password: ${{ secrets.SSH_PASSPHRASE }}
-          script: |
-            ls -la
+          passphrase: ${{ secrets.BAZOOKA_PASSWORD }}
+          port: 22
+          script: whoami
