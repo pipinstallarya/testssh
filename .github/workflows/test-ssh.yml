@@ -39,7 +39,7 @@ jobs:
         run: |
           set -x # Enable debugging output
           export SSHPASS=$JUMP_PASSWORD
-          sshpass -e ssh -vvv -o IdentitiesOnly=yes -o 'IdentityFile=~/.ssh/id_rsa' -o StrictHostKeyChecking=no -J bazooka ml-brain 'echo "Connected Successfully via Proxy Jump"'
+          sshpass -e ssh -vvv -o IdentitiesOnly=yes -o 'IdentityFile=~/.ssh/id_rsa' -o StrictHostKeyChecking=no -J ml-brain 'echo "Connected Successfully via Proxy Jump"'
 
       - name: Debug SSH connection
         if: failure()
