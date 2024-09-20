@@ -12,30 +12,41 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get install sshpass
 
-      - name: Setup SSH key
+      - name: Setup SSH config and keys
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          JUMP_HOST: bazooka.cs.ait.ac.th
+          TARGET_HOST: ml.brain.cs.ait.ac.th
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
-          ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
+          ssh-keyscan -H $JUMP_HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H $TARGET_HOST >> ~/.ssh/known_hosts
+          echo "Host $JUMP_HOST" >> ~/.ssh/config
+          echo "  User st125462" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+          echo "Host ml-brain" >> ~/.ssh/config
+          echo "  HostName $TARGET_HOST" >> ~/.ssh/config
+          echo "  User st125462" >> ~/.ssh/config
+          echo "  ProxyJump $JUMP_HOST" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
 
       - name: Connect to remote server
         env:
-          JUMP_PASSWORD: ${{ secrets.BAZOOKA_PASSWORD }}
+          JUMP_PASSWORD: ${{ secrets.JUMP_PASSWORD }}
           KEY_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
         run: |
-          sshpass -p "$JUMP_PASSWORD" ssh -o ProxyCommand="sshpass -p $JUMP_PASSWORD ssh -W %h:%p st125462@bazooka.cs.ait.ac.th" st125462@ml.brain.cs.ait.ac.th << EOF
-            echo "Connected Successfully via Proxy Jump"
-            # Add your commands here
-          EOF
+          set -x # Enable debugging output
+          export SSHPASS=$JUMP_PASSWORD
+          sshpass -e ssh -vvv -o IdentitiesOnly=yes -o 'IdentityFile=~/.ssh/id_rsa' -o StrictHostKeyChecking=no -J bazooka ml-brain 'echo "Connected Successfully via Proxy Jump"'
 
       - name: Debug SSH connection
         if: failure()
         env:
           JUMP_PASSWORD: ${{ secrets.JUMP_PASSWORD }}
-          KEY_PASSPHRASE: ${{ secrets.KEY_PASSPHRASE }}
+          KEY_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
         run: |
-          sshpass -p "$JUMP_PASSWORD" ssh -vvv -o ProxyCommand="sshpass -p $JUMP_PASSWORD ssh -W %h:%p st125462@bazooka.cs.ait.ac.th" st125462@ml.brain.cs.ait.ac.th
+          set -x # Enable debugging output
+          export SSHPASS=$JUMP_PASSWORD
+          sshpass -e ssh -vvv -o IdentitiesOnly=yes -o 'IdentityFile=~/.ssh/id_rsa' -o StrictHostKeyChecking=no -J bazooka ml-brain
