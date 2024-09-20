@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main  # Adjust based on your deployment branch
+      - main  # Adjust this to match your deployment branch
 
 jobs:
   deploy:
@@ -13,13 +13,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up SSH
+    - name: Set up SSH with Debug Output
       id: setup_ssh
       run: |
+        set -x  # Enable debugging output to trace commands
+        
         # Create SSH directory
         mkdir -p ~/.ssh
         
-        # Add the SSH private key from the GitHub Secrets
+        # Add the SSH private key from GitHub Secrets
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         
@@ -27,19 +29,21 @@ jobs:
         echo "${{ secrets.SSH_CONFIG }}" > ~/.ssh/config
         chmod 600 ~/.ssh/config
         
-        # Install sshpass to handle password and passphrase prompts
+        # Install sshpass to handle the password and passphrase prompts
         sudo apt-get update && sudo apt-get install -y sshpass
         
-        # Start SSH agent and add the passphrase-protected key
-        eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/id_rsa <<< "${{ secrets.SSH_PASSPHRASE }}"
-        
-        # Add servers to known hosts to prevent prompt issues
+        # Add server host keys to known hosts to avoid manual prompts
         ssh-keyscan -H bazooka.cs.ait.ac.th >> ~/.ssh/known_hosts
         ssh-keyscan -H ml.brain.cs.ait.ac.th >> ~/.ssh/known_hosts
 
-    - name: Test SSH Connection
+    - name: Connect to ml-brain via Proxy Jump with Debug Output
       run: |
-        # Use sshpass to supply the bazooka password and connect to ml-brain via proxy jump
-        SSHPASS="${{ secrets.BAZOOKA_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no -J bazooka \
-          -o "IdentitiesOnly=yes" -o "IdentityFile=~/.ssh/id_rsa" ml-brain "echo 'Connected Successfully via Proxy Jump'"
+        set -x  # Enable debugging output
+        
+        # Combine both passphrase handling for SSH key and proxy jump password in one command
+        export SSHPASS="${{ secrets.BAZOOKA_PASSWORD }}"
+        export SSH_ASKPASS=/usr/bin/sshpass  # Direct SSH to use sshpass
+        
+        # Test SSH connection with detailed logging
+        sshpass -e ssh -o "IdentitiesOnly=yes" -o "IdentityFile=~/.ssh/id_rsa" -o "StrictHostKeyChecking=no" -J bazooka ml-brain \
+          "echo 'Connected Successfully via Proxy Jump'"
