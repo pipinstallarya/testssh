@@ -1,20 +1,22 @@
-name: Deploy to Server
+name: SSH and Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - name: executing remote ssh commands using password
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: bazooka.cs.ait.ac.th
-          username: st125462
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.BAZOOKA_PASSWORD }}
-          port: 22
-          script: whoami
+    - uses: actions/checkout@v2
+
+    - name: SSH and Run Commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: bazooka.cs.ait.ac.th
+        username: st125462
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 22
+        script: |
+          whoami
