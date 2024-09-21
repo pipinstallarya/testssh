@@ -13,10 +13,13 @@ jobs:
     - name: SSH and Run Commands
       uses: appleboy/ssh-action@master
       with:
-        host: bazooka.cs.ait.ac.th
+        host: ml.brain.cs.ait.ac.th
         username: st125462
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        proxy_host: bazooka.cs.ait.ac.th
+        proxy_username: st125462
+        proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          whoami
+          docker images
