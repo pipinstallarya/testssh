@@ -20,6 +20,7 @@ jobs:
         proxy_host: bazooka.cs.ait.ac.th
         proxy_username: st125462
         proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        proxy_passphrase: ${{ secrets.SSH_PASSPHRASE }}
         port: 22
         script: |
           docker images
